@@ -7,6 +7,8 @@ import { useEmployees } from "@/hooks/useEmployees";
 import { SalaryRecord } from "@/lib/types";
 import SummaryTable from "@/components/SummaryTable";
 import MonthYearPicker from "@/components/MonthYearPicker";
+import { calculateSalary } from "@/lib/calculations";
+import * as XLSX from "xlsx";
 
 function SummaryContent() {
   const searchParams = useSearchParams();
@@ -58,6 +60,79 @@ function SummaryContent() {
     "July", "August", "September", "October", "November", "December",
   ];
 
+  const exportToExcel = () => {
+    let totalGross = 0;
+    let totalDeductions = 0;
+    let totalNet = 0;
+
+    const data = employees.map((emp, i) => {
+      const record = records.find((r) => r.employee_id === emp.id);
+      if (!record) {
+        return {
+          "#": i + 1,
+          "Name": emp.name,
+          "Basic Pay": emp.basic_pay,
+          "O/TIME": 0,
+          "O/D Pay": 0,
+          "Leave Pay": 0,
+          "Bonus": 0,
+          "Gross Pay": 0,
+          "Absent": 0,
+          "Loan": 0,
+          "Penalty": 0,
+          "Sales Cred": 0,
+          "IOU": 0,
+          "Total Deductions": 0,
+          "Net Pay": 0,
+        };
+      }
+      const calc = calculateSalary(emp, record);
+      totalGross += calc.gross_pay;
+      totalDeductions += calc.total_deductions;
+      totalNet += calc.net_pay;
+      return {
+        "#": i + 1,
+        "Name": emp.name,
+        "Basic Pay": emp.basic_pay,
+        "O/TIME": calc.ot_pay,
+        "O/D Pay": calc.od_pay,
+        "Leave Pay": calc.leave_pay,
+        "Bonus": calc.bonus,
+        "Gross Pay": calc.gross_pay,
+        "Absent": calc.absent_amount,
+        "Loan": record.loan_paid ? 0 : record.loan_amount,
+        "Penalty": record.penalty_amount,
+        "Sales Cred": record.sales_cred_amount,
+        "IOU": record.iou_amount,
+        "Total Deductions": calc.total_deductions,
+        "Net Pay": calc.net_pay,
+      };
+    });
+
+    data.push({
+      "#": 0,
+      "Name": "TOTAL",
+      "Basic Pay": 0,
+      "O/TIME": 0,
+      "O/D Pay": 0,
+      "Leave Pay": 0,
+      "Bonus": 0,
+      "Gross Pay": totalGross,
+      "Absent": 0,
+      "Loan": 0,
+      "Penalty": 0,
+      "Sales Cred": 0,
+      "IOU": 0,
+      "Total Deductions": totalDeductions,
+      "Net Pay": totalNet,
+    });
+
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, `${MONTHS[month - 1]} ${year}`);
+    XLSX.writeFile(wb, `RIMI_DRIVE_Payroll_${MONTHS[month - 1]}_${year}.xlsx`);
+  };
+
   if (empLoading || loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center space-y-4">
@@ -101,6 +176,15 @@ function SummaryContent() {
               <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
               Edit Salaries
             </a>
+            {records.length > 0 && (
+              <button
+                onClick={exportToExcel}
+                className="inline-flex items-center justify-center px-5 py-2.5 bg-green-600 text-white font-bold text-sm rounded-lg hover:bg-green-700 focus:ring-4 focus:ring-green-100 transition-all shadow-sm whitespace-nowrap"
+              >
+                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                Export Excel
+              </button>
+            )}
           </div>
         </div>
 
