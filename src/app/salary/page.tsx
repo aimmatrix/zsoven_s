@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useEmployees } from "@/hooks/useEmployees";
 import { useSalaryRecord } from "@/hooks/useSalaryRecord";
 import { calculateSalary } from "@/lib/calculations";
+import { supabase } from "@/lib/supabase";
 import SalaryForm from "@/components/SalaryForm";
 import EmployeeNav from "@/components/EmployeeNav";
 import MonthYearPicker from "@/components/MonthYearPicker";
@@ -33,6 +34,25 @@ function SalaryPageContent() {
       year,
       currentEmployee?.working_days || 26
     );
+
+  const [holidayUsedThisYear, setHolidayUsedThisYear] = useState(0);
+
+  // Fetch yearly holiday usage for current employee
+  useEffect(() => {
+    if (!currentEmployee?.id) return;
+    const fetchHolidayUsage = async () => {
+      const { data } = await supabase
+        .from("salary_records")
+        .select("holiday_days_taken")
+        .eq("employee_id", currentEmployee.id)
+        .eq("year", year);
+      if (data) {
+        const total = data.reduce((sum, r) => sum + Number(r.holiday_days_taken ?? 0), 0);
+        setHolidayUsedThisYear(total);
+      }
+    };
+    fetchHolidayUsage();
+  }, [currentEmployee?.id, year, saved]);
 
   const calculated =
     currentEmployee && record
@@ -153,6 +173,7 @@ function SalaryPageContent() {
                 saving={saving}
                 saved={saved}
                 onUpdate={updateRecord}
+                holidayUsedThisYear={holidayUsedThisYear}
               />
             </div>
           ) : null}

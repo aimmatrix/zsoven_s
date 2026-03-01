@@ -41,6 +41,7 @@ export function useSalaryRecord(
       } else {
         setRecord({
           ...data,
+          holiday_days_taken: Number(data.holiday_days_taken ?? 0),
           odt_days: Number(data.odt_days),
           ot_hours: Number(data.ot_hours),
           leave_pay_amount: Number(data.leave_pay_amount),
@@ -70,6 +71,7 @@ export function useSalaryRecord(
         month: recordToSave.month,
         year: recordToSave.year,
         working_days: recordToSave.working_days,
+        holiday_days_taken: recordToSave.holiday_days_taken,
         odt_days: recordToSave.odt_days,
         ot_hours: recordToSave.ot_hours,
         leave_pay_enabled: recordToSave.leave_pay_enabled,

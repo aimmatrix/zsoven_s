@@ -4,6 +4,7 @@ export interface Employee {
   basic_pay: number;
   working_days: number;
   ot_divisor: number;
+  holiday_entitlement: number;
   sort_order: number;
   is_active: boolean;
 }
@@ -22,6 +23,9 @@ export interface SalaryRecord {
   leave_pay_amount: number;
   bonus_enabled: boolean;
   bonus_amount: number;
+
+  // Holiday tracking
+  holiday_days_taken: number;
 
   // Deduction inputs
   absent_days: number;
@@ -57,6 +61,7 @@ export function defaultSalaryRecord(
     month,
     year,
     working_days: workingDays,
+    holiday_days_taken: 0,
     odt_days: 0,
     ot_hours: 0,
     leave_pay_enabled: false,

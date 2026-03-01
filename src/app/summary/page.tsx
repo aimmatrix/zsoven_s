@@ -46,6 +46,7 @@ function SummaryContent() {
             penalty_amount: Number(r.penalty_amount),
             sales_cred_amount: Number(r.sales_cred_amount),
             iou_amount: Number(r.iou_amount),
+            holiday_days_taken: Number(r.holiday_days_taken ?? 0),
           }))
         );
       }
@@ -84,6 +85,7 @@ function SummaryContent() {
           "IOU": 0,
           "Total Deductions": 0,
           "Net Pay": 0,
+          "Holiday Days": 0,
         };
       }
       const calc = calculateSalary(emp, record);
@@ -106,6 +108,7 @@ function SummaryContent() {
         "IOU": record.iou_amount,
         "Total Deductions": calc.total_deductions,
         "Net Pay": calc.net_pay,
+        "Holiday Days": record.holiday_days_taken,
       };
     });
 
@@ -125,6 +128,7 @@ function SummaryContent() {
       "IOU": 0,
       "Total Deductions": totalDeductions,
       "Net Pay": totalNet,
+      "Holiday Days": 0,
     });
 
     const ws = XLSX.utils.json_to_sheet(data);

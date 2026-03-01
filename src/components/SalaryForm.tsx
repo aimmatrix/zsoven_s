@@ -10,6 +10,7 @@ interface SalaryFormProps {
   saving: boolean;
   saved: boolean;
   onUpdate: (updates: Partial<SalaryRecord>) => void;
+  holidayUsedThisYear: number;
 }
 
 function NumberInput({
@@ -78,7 +79,9 @@ export default function SalaryForm({
   saving,
   saved,
   onUpdate,
+  holidayUsedThisYear,
 }: SalaryFormProps) {
+  const holidayRemaining = employee.holiday_entitlement - holidayUsedThisYear;
   return (
     <div className="space-y-6">
       {/* Save Status Strip */}
@@ -223,6 +226,44 @@ export default function SalaryForm({
 
             <div className="pt-2">
               <CalculatedField label="GROSS PAY" value={calculated.gross_pay} highlight />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* HOLIDAY TRACKING SECTION */}
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden relative">
+        <div className="absolute top-0 left-0 w-1 h-full bg-purple-500"></div>
+        <div className="p-5 sm:p-6">
+          <div className="flex items-center mb-4">
+            <div className="p-1.5 bg-purple-100 rounded-lg mr-2.5">
+              <svg className="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+            </div>
+            <h3 className="text-base font-bold text-gray-900 tracking-tight">
+              Holiday Tracking
+            </h3>
+          </div>
+
+          <div className="space-y-1">
+            <NumberInput
+              label="Holiday Days This Month"
+              value={record.holiday_days_taken}
+              onChange={(v) => onUpdate({ holiday_days_taken: v })}
+              step="0.5"
+            />
+
+            <div className="flex items-center justify-between py-3 border-b border-gray-100">
+              <span className="text-sm font-medium text-gray-500">Used This Year</span>
+              <span className="text-sm font-mono font-semibold text-purple-700">
+                {holidayUsedThisYear} / {employee.holiday_entitlement} days
+              </span>
+            </div>
+
+            <div className="flex items-center justify-between py-3 border-b border-gray-100">
+              <span className="text-sm font-medium text-gray-500">Remaining</span>
+              <span className={`text-sm font-mono font-bold ${holidayRemaining > 0 ? "text-green-700" : holidayRemaining === 0 ? "text-gray-700" : "text-red-600"}`}>
+                {holidayRemaining} days
+              </span>
             </div>
           </div>
         </div>

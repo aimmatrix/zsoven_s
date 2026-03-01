@@ -9,7 +9,7 @@ import { formatCurrency } from "@/lib/calculations";
 export default function EmployeesPage() {
   const { employees, loading, refetch } = useEmployees();
   const [editing, setEditing] = useState<string | null>(null);
-  const [form, setForm] = useState({ name: "", basic_pay: 0, working_days: 26, ot_divisor: 8 });
+  const [form, setForm] = useState({ name: "", basic_pay: 0, working_days: 26, ot_divisor: 8, holiday_entitlement: 14 });
   const [adding, setAdding] = useState(false);
   const [saving, setSaving] = useState(false);
 
@@ -20,6 +20,7 @@ export default function EmployeesPage() {
       basic_pay: emp.basic_pay,
       working_days: emp.working_days,
       ot_divisor: emp.ot_divisor,
+      holiday_entitlement: emp.holiday_entitlement ?? 14,
     });
   };
 
@@ -33,6 +34,7 @@ export default function EmployeesPage() {
         basic_pay: form.basic_pay,
         working_days: form.working_days,
         ot_divisor: form.ot_divisor,
+        holiday_entitlement: form.holiday_entitlement,
       })
       .eq("id", editing);
     setEditing(null);
@@ -51,10 +53,11 @@ export default function EmployeesPage() {
       basic_pay: form.basic_pay,
       working_days: form.working_days,
       ot_divisor: form.ot_divisor,
+      holiday_entitlement: form.holiday_entitlement,
       sort_order: maxOrder + 1,
     });
     setAdding(false);
-    setForm({ name: "", basic_pay: 0, working_days: 26, ot_divisor: 8 });
+    setForm({ name: "", basic_pay: 0, working_days: 26, ot_divisor: 8, holiday_entitlement: 14 });
     setSaving(false);
     refetch();
   };
@@ -95,7 +98,7 @@ export default function EmployeesPage() {
             onClick={() => {
               setAdding(true);
               setEditing(null);
-              setForm({ name: "", basic_pay: 0, working_days: 26, ot_divisor: 8 });
+              setForm({ name: "", basic_pay: 0, working_days: 26, ot_divisor: 8, holiday_entitlement: 14 });
             }}
             disabled={adding}
             className="inline-flex items-center justify-center px-5 py-2.5 bg-blue-600 text-white font-medium text-sm rounded-xl hover:bg-blue-700 focus:ring-4 focus:ring-blue-100 transition-all shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
@@ -149,12 +152,21 @@ export default function EmployeesPage() {
                   className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 font-medium focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors outline-none"
                 />
               </div>
-              <div className="sm:col-span-2">
+              <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-1.5">Shift Hours (OT Divisor)</label>
                 <input
                   type="number"
                   value={form.ot_divisor}
                   onChange={(e) => setForm({ ...form, ot_divisor: Number(e.target.value) || 8 })}
+                  className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 font-medium focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors outline-none"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1.5">Holiday Entitlement (Days/Year)</label>
+                <input
+                  type="number"
+                  value={form.holiday_entitlement}
+                  onChange={(e) => setForm({ ...form, holiday_entitlement: Number(e.target.value) || 14 })}
                   className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 font-medium focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors outline-none"
                 />
               </div>
@@ -246,12 +258,21 @@ export default function EmployeesPage() {
                         className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 font-medium focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors outline-none"
                       />
                     </div>
-                    <div className="sm:col-span-2">
+                    <div>
                       <label className="block text-sm font-semibold text-gray-700 mb-1.5">Shift Hours (OT Divisor)</label>
                       <input
                         type="number"
                         value={form.ot_divisor}
                         onChange={(e) => setForm({ ...form, ot_divisor: Number(e.target.value) || 8 })}
+                        className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 font-medium focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-1.5">Holiday Entitlement (Days/Year)</label>
+                      <input
+                        type="number"
+                        value={form.holiday_entitlement}
+                        onChange={(e) => setForm({ ...form, holiday_entitlement: Number(e.target.value) || 14 })}
                         className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 font-medium focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors outline-none"
                       />
                     </div>
@@ -309,6 +330,11 @@ export default function EmployeesPage() {
                           <svg className="w-4 h-4 text-gray-400 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                           <span className="text-gray-500 font-medium mr-1">Shift:</span>
                           <span className="font-semibold text-gray-800">{emp.ot_divisor}h</span>
+                        </div>
+                        <div className="flex items-center text-sm">
+                          <svg className="w-4 h-4 text-purple-400 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                          <span className="text-gray-500 font-medium mr-1">Holiday:</span>
+                          <span className="font-semibold text-gray-800">{emp.holiday_entitlement ?? 14}d</span>
                         </div>
                       </div>
                     </div>
