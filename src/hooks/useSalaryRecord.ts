@@ -4,6 +4,13 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/lib/supabase";
 import { SalaryRecord, defaultSalaryRecord } from "@/lib/types";
 
+export interface LogCounts {
+  penalty: number;
+  loan: number;
+  sales_credit: number;
+  iou: number;
+}
+
 export function useSalaryRecord(
   employeeId: string | null,
   month: number,
@@ -14,6 +21,7 @@ export function useSalaryRecord(
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [logCounts, setLogCounts] = useState<LogCounts>({ penalty: 0, loan: 0, sales_credit: 0, iou: 0 });
   const saveTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   // Fetch or create record
@@ -32,9 +40,69 @@ export function useSalaryRecord(
         .eq("year", year)
         .single();
 
+      // Compute date range for this month
+      const startDate = `${year}-${String(month).padStart(2, "0")}-01`;
+      const endDate = month === 12
+        ? `${year + 1}-01-01`
+        : `${year}-${String(month + 1).padStart(2, "0")}-01`;
+
+      // Fetch deduction logs for this employee + month
+      const { data: logs } = await supabase
+        .from("deduction_logs")
+        .select("type, amount, description")
+        .eq("employee_id", employeeId)
+        .gte("event_date", startDate)
+        .lt("event_date", endDate);
+
+      // Compute log counts
+      const counts: LogCounts = { penalty: 0, loan: 0, sales_credit: 0, iou: 0 };
+      if (logs) {
+        for (const log of logs) {
+          if (log.type in counts) {
+            counts[log.type as keyof LogCounts]++;
+          }
+        }
+      }
+      setLogCounts(counts);
+
       if (error && error.code === "PGRST116") {
-        // No record found — use defaults
-        setRecord(defaultSalaryRecord(employeeId, month, year, defaultWorkingDays));
+        // No record found — use defaults, pre-filled from logs
+        const rec = defaultSalaryRecord(employeeId, month, year, defaultWorkingDays);
+
+        if (logs && logs.length > 0) {
+          let penaltyTotal = 0, loanTotal = 0, salesCreditTotal = 0, iouTotal = 0;
+          const penaltyDescs: string[] = [];
+          const salesCreditDescs: string[] = [];
+
+          for (const log of logs) {
+            const amt = Number(log.amount) || 0;
+            switch (log.type) {
+              case "penalty":
+                penaltyTotal += amt;
+                if (log.description) penaltyDescs.push(log.description);
+                break;
+              case "loan":
+                loanTotal += amt;
+                break;
+              case "sales_credit":
+                salesCreditTotal += amt;
+                if (log.description) salesCreditDescs.push(log.description);
+                break;
+              case "iou":
+                iouTotal += amt;
+                break;
+            }
+          }
+
+          rec.penalty_amount = penaltyTotal;
+          rec.penalty_description = penaltyDescs.join("; ");
+          rec.loan_amount = loanTotal;
+          rec.sales_cred_amount = salesCreditTotal;
+          rec.sales_cred_item = salesCreditDescs.join("; ");
+          rec.iou_amount = iouTotal;
+        }
+
+        setRecord(rec);
       } else if (error) {
         console.error("Error fetching salary record:", error);
         setRecord(defaultSalaryRecord(employeeId, month, year, defaultWorkingDays));
@@ -141,5 +209,5 @@ export function useSalaryRecord(
     }
   }, [record, save]);
 
-  return { record, loading, saving, saved, updateRecord, saveNow };
+  return { record, loading, saving, saved, updateRecord, saveNow, logCounts };
 }

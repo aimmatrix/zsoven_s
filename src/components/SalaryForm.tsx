@@ -2,6 +2,7 @@
 
 import { Employee, SalaryRecord, CalculatedSalary } from "@/lib/types";
 import { calculateSalary, formatCurrency } from "@/lib/calculations";
+import { LogCounts } from "@/hooks/useSalaryRecord";
 
 interface SalaryFormProps {
   employee: Employee;
@@ -11,6 +12,7 @@ interface SalaryFormProps {
   saved: boolean;
   onUpdate: (updates: Partial<SalaryRecord>) => void;
   holidayUsedThisYear: number;
+  logCounts?: LogCounts;
 }
 
 function NumberInput({
@@ -80,6 +82,7 @@ export default function SalaryForm({
   saved,
   onUpdate,
   holidayUsedThisYear,
+  logCounts,
 }: SalaryFormProps) {
   const holidayRemaining = employee.holiday_entitlement - holidayUsedThisYear;
   return (
@@ -294,7 +297,12 @@ export default function SalaryForm({
 
             {/* Loan Toggle */}
             <div className="flex sm:items-center justify-between py-3 border-b border-gray-100 flex-col sm:flex-row gap-3">
-              <label className="text-sm font-semibold text-gray-700">Loan Repayment</label>
+              <label className="text-sm font-semibold text-gray-700">
+                Loan Repayment
+                {logCounts && logCounts.loan > 0 && (
+                  <span className="ml-1.5 inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-orange-100 text-orange-700">{logCounts.loan} logged</span>
+                )}
+              </label>
               <div className="flex items-center justify-end w-full sm:w-auto gap-3">
                 <button
                   onClick={() => onUpdate({ loan_paid: !record.loan_paid })}
@@ -321,7 +329,12 @@ export default function SalaryForm({
             {/* Penalty */}
             <div className="py-3 border-b border-gray-100">
               <div className="flex sm:items-center justify-between flex-col sm:flex-row gap-2">
-                <label className="text-sm font-semibold text-gray-700">Penalty</label>
+                <label className="text-sm font-semibold text-gray-700">
+                  Penalty
+                  {logCounts && logCounts.penalty > 0 && (
+                    <span className="ml-1.5 inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-orange-100 text-orange-700">{logCounts.penalty} logged</span>
+                  )}
+                </label>
                 <input
                   type="number"
                   value={record.penalty_amount || ""}
@@ -349,7 +362,12 @@ export default function SalaryForm({
             {/* Sales Credit */}
             <div className="py-3 border-b border-gray-100">
               <div className="flex sm:items-center justify-between flex-col sm:flex-row gap-2">
-                <label className="text-sm font-semibold text-gray-700">Sales Credit</label>
+                <label className="text-sm font-semibold text-gray-700">
+                  Sales Credit
+                  {logCounts && logCounts.sales_credit > 0 && (
+                    <span className="ml-1.5 inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-orange-100 text-orange-700">{logCounts.sales_credit} logged</span>
+                  )}
+                </label>
                 <input
                   type="number"
                   value={record.sales_cred_amount || ""}
@@ -374,11 +392,22 @@ export default function SalaryForm({
               )}
             </div>
 
-            <NumberInput
-              label="I.O.U"
-              value={record.iou_amount}
-              onChange={(v) => onUpdate({ iou_amount: v })}
-            />
+            <div className="flex sm:items-center justify-between py-3 border-b border-gray-100 flex-col sm:flex-row gap-2 sm:gap-4">
+              <label className="text-sm font-semibold text-gray-700">
+                I.O.U
+                {logCounts && logCounts.iou > 0 && (
+                  <span className="ml-1.5 inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-orange-100 text-orange-700">{logCounts.iou} logged</span>
+                )}
+              </label>
+              <input
+                type="number"
+                value={record.iou_amount || ""}
+                onChange={(e) => onUpdate({ iou_amount: Number(e.target.value) || 0 })}
+                step="1"
+                min="0"
+                className="w-full sm:w-32 text-right px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm font-semibold text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors outline-none"
+              />
+            </div>
 
             <div className="pt-2">
               <CalculatedField

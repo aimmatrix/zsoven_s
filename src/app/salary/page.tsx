@@ -27,7 +27,7 @@ function SalaryPageContent() {
   const { employees, loading: empLoading } = useEmployees();
   const currentEmployee = employees[currentIndex] || null;
 
-  const { record, loading: recLoading, saving, saved, updateRecord, saveNow } =
+  const { record, loading: recLoading, saving, saved, updateRecord, saveNow, logCounts } =
     useSalaryRecord(
       currentEmployee?.id || null,
       month,
@@ -174,6 +174,7 @@ function SalaryPageContent() {
                 saved={saved}
                 onUpdate={updateRecord}
                 holidayUsedThisYear={holidayUsedThisYear}
+                logCounts={logCounts}
               />
             </div>
           ) : null}
