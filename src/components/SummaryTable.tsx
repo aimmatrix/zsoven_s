@@ -27,73 +27,72 @@ export default function SummaryTable({ employees, records }: SummaryTableProps) 
   });
 
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full text-sm">
-        <thead>
-          <tr className="border-b-2 border-gray-200">
-            <th className="text-left py-3 px-2 font-medium text-gray-500">#</th>
-            <th className="text-left py-3 px-2 font-medium text-gray-500">Name</th>
-            <th className="text-right py-3 px-2 font-medium text-gray-500">Basic</th>
-            <th className="text-right py-3 px-2 font-medium text-gray-500">O/TIME</th>
-            <th className="text-right py-3 px-2 font-medium text-gray-500">O/D</th>
-            <th className="text-right py-3 px-2 font-medium text-gray-500">Gross</th>
-            <th className="text-right py-3 px-2 font-medium text-gray-500">Deductions</th>
-            <th className="text-right py-3 px-2 font-medium text-gray-500">Net Pay</th>
+    <div className="overflow-x-auto rounded-xl border border-gray-200 shadow-sm bg-white">
+      <table className="w-full text-sm text-left">
+        <thead className="bg-gray-50 text-gray-700 font-semibold uppercase tracking-wider text-xs border-b border-gray-200">
+          <tr>
+            <th className="py-4 px-4 whitespace-nowrap">#</th>
+            <th className="py-4 px-4 whitespace-nowrap">Name</th>
+            <th className="py-4 px-4 text-right whitespace-nowrap">Basic Pay</th>
+            <th className="py-4 px-4 text-right whitespace-nowrap">O/TIME</th>
+            <th className="py-4 px-4 text-right whitespace-nowrap">O/D Pay</th>
+            <th className="py-4 px-4 text-right whitespace-nowrap text-gray-900 font-bold">Gross Pay</th>
+            <th className="py-4 px-4 text-right whitespace-nowrap">Deductions</th>
+            <th className="py-4 px-4 text-right whitespace-nowrap text-blue-900 font-bold">Net Pay</th>
           </tr>
         </thead>
-        <tbody>
+        <tbody className="divide-y divide-gray-100">
           {rows.map(({ employee, calculated }, i) => (
             <tr
               key={employee.id}
-              className="border-b border-gray-100 hover:bg-gray-50"
+              className="hover:bg-blue-50/50 transition-colors duration-150 group"
             >
-              <td className="py-2 px-2 text-gray-400">{i + 1}</td>
-              <td className="py-2 px-2 font-medium text-gray-900">
+              <td className="py-3.5 px-4 text-gray-400 font-medium">{i + 1}</td>
+              <td className="py-3.5 px-4 font-bold text-gray-900">
                 {employee.name}
               </td>
               {calculated ? (
                 <>
-                  <td className="py-2 px-2 text-right font-mono">
+                  <td className="py-3.5 px-4 text-right font-mono text-gray-600">
                     {formatCurrency(employee.basic_pay)}
                   </td>
-                  <td className="py-2 px-2 text-right font-mono">
+                  <td className="py-3.5 px-4 text-right font-mono text-gray-600">
                     {formatCurrency(calculated.ot_pay)}
                   </td>
-                  <td className="py-2 px-2 text-right font-mono">
+                  <td className="py-3.5 px-4 text-right font-mono text-gray-600">
                     {formatCurrency(calculated.od_pay)}
                   </td>
-                  <td className="py-2 px-2 text-right font-mono">
+                  <td className="py-3.5 px-4 text-right font-mono font-bold text-gray-900">
                     {formatCurrency(calculated.gross_pay)}
                   </td>
-                  <td className="py-2 px-2 text-right font-mono text-red-600">
+                  <td className="py-3.5 px-4 text-right font-mono font-medium text-red-600">
                     {formatCurrency(calculated.total_deductions)}
                   </td>
                   <td
-                    className={`py-2 px-2 text-right font-mono font-bold ${
-                      calculated.net_pay >= 0 ? "text-green-700" : "text-red-700"
-                    }`}
+                    className={`py-3.5 px-4 text-right font-mono font-bold ${calculated.net_pay >= 0 ? "text-green-700 bg-green-50/30 group-hover:bg-green-100/50" : "text-red-700 bg-red-50/30 group-hover:bg-red-100/50"
+                      }`}
                   >
                     {formatCurrency(calculated.net_pay)}
                   </td>
                 </>
               ) : (
-                <td colSpan={6} className="py-2 px-2 text-center text-gray-400">
-                  No data
+                <td colSpan={6} className="py-3.5 px-4 text-center text-gray-400 italic">
+                  No salary record
                 </td>
               )}
             </tr>
           ))}
         </tbody>
-        <tfoot>
-          <tr className="border-t-2 border-gray-300 bg-gray-50">
-            <td colSpan={5} className="py-3 px-2 font-bold text-gray-700">
-              TOTAL
+        <tfoot className="bg-gradient-to-r from-gray-50 to-gray-100 border-t-2 border-gray-200">
+          <tr>
+            <td colSpan={5} className="py-4 px-4 text-right font-extrabold text-gray-900 uppercase tracking-widest text-xs">
+              Total Payroll
             </td>
-            <td className="py-3 px-2 text-right font-mono font-bold">
+            <td className="py-4 px-4 text-right font-mono font-bold text-gray-900 bg-gray-200/50">
               {formatCurrency(totalGross)}
             </td>
-            <td></td>
-            <td className="py-3 px-2 text-right font-mono font-bold text-green-700">
+            <td className="bg-gray-200/50"></td>
+            <td className="py-4 px-4 text-right font-mono font-black text-blue-700 bg-blue-100/30 text-base">
               {formatCurrency(totalNet)}
             </td>
           </tr>

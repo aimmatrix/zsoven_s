@@ -69,44 +69,66 @@ function SalaryPageContent() {
 
   if (empLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p className="text-gray-500">Loading employees...</p>
+      <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center space-y-4">
+        <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+        <p className="text-gray-600 font-medium">Loading employee data...</p>
       </div>
     );
   }
 
   if (employees.length === 0) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-gray-500 mb-4">No employees found.</p>
-          <p className="text-sm text-gray-400">
-            Run the seed SQL in your Supabase dashboard first.
+      <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4">
+        <div className="text-center max-w-sm bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
+          <div className="bg-red-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg className="w-8 h-8 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+          </div>
+          <p className="text-xl font-bold text-gray-900 mb-2">No employees found</p>
+          <p className="text-sm text-gray-500 mb-6">
+            You need to add employees before calculating salaries.
           </p>
+          <button
+            onClick={() => router.push("/employees")}
+            className="w-full py-2.5 bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 transition-colors"
+          >
+            Go to Manage Staff
+          </button>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-lg mx-auto px-4 py-6">
+    <div className="min-h-screen bg-gray-50 text-gray-900 pb-12">
+      <div className="max-w-xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
         {/* Header */}
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
           <a
             href="/"
-            className="text-sm text-blue-600 hover:text-blue-800"
+            className="inline-flex items-center text-sm font-medium text-blue-600 hover:text-blue-800 transition-colors bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg w-fit"
           >
-            &larr; Home
+            <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
+            Dashboard
           </a>
-          <MonthYearPicker
-            month={month}
-            year={year}
-            onChange={handleMonthYearChange}
-          />
+          <div className="hidden sm:block">
+            <MonthYearPicker
+              month={month}
+              year={year}
+              onChange={handleMonthYearChange}
+            />
+          </div>
+          <div className="block sm:hidden grid grid-cols-2 gap-2 mt-2">
+            <div className="w-full">
+              <MonthYearPicker
+                month={month}
+                year={year}
+                onChange={handleMonthYearChange}
+              />
+            </div>
+          </div>
         </div>
 
-        {/* Employee Navigation */}
+        {/* Top Navigation */}
         <EmployeeNav
           employees={employees}
           currentIndex={currentIndex}
@@ -118,18 +140,21 @@ function SalaryPageContent() {
         {/* Salary Form */}
         <div className="mt-6">
           {recLoading ? (
-            <div className="text-center py-12 text-gray-400">
-              Loading salary data...
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-12 text-center animate-pulse">
+              <div className="w-12 h-12 border-4 border-gray-200 border-t-blue-500 rounded-full animate-spin mx-auto mb-4"></div>
+              <p className="text-gray-500 font-medium">Loading records...</p>
             </div>
           ) : currentEmployee && record && calculated ? (
-            <SalaryForm
-              employee={currentEmployee}
-              record={record}
-              calculated={calculated}
-              saving={saving}
-              saved={saved}
-              onUpdate={updateRecord}
-            />
+            <div className="transition-all duration-300">
+              <SalaryForm
+                employee={currentEmployee}
+                record={record}
+                calculated={calculated}
+                saving={saving}
+                saved={saved}
+                onUpdate={updateRecord}
+              />
+            </div>
           ) : null}
         </div>
 
@@ -152,8 +177,9 @@ export default function SalaryPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen flex items-center justify-center">
-          <p className="text-gray-500">Loading...</p>
+        <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center space-y-4">
+          <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+          <p className="text-gray-600 font-medium">Initializing...</p>
         </div>
       }
     >
