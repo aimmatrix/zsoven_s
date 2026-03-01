@@ -65,48 +65,48 @@ export function useSalaryRecord(
       }
       setLogCounts(counts);
 
-      if (error && error.code === "PGRST116") {
-        // No record found — use defaults, pre-filled from logs
-        const rec = defaultSalaryRecord(employeeId, month, year, defaultWorkingDays);
+      // Sum log entries by type
+      let penaltyTotal = 0, loanTotal = 0, salesCreditTotal = 0, iouTotal = 0;
+      const penaltyDescs: string[] = [];
+      const salesCreditDescs: string[] = [];
 
-        if (logs && logs.length > 0) {
-          let penaltyTotal = 0, loanTotal = 0, salesCreditTotal = 0, iouTotal = 0;
-          const penaltyDescs: string[] = [];
-          const salesCreditDescs: string[] = [];
-
-          for (const log of logs) {
-            const amt = Number(log.amount) || 0;
-            switch (log.type) {
-              case "penalty":
-                penaltyTotal += amt;
-                if (log.description) penaltyDescs.push(log.description);
-                break;
-              case "loan":
-                loanTotal += amt;
-                break;
-              case "sales_credit":
-                salesCreditTotal += amt;
-                if (log.description) salesCreditDescs.push(log.description);
-                break;
-              case "iou":
-                iouTotal += amt;
-                break;
-            }
+      if (logs && logs.length > 0) {
+        for (const log of logs) {
+          const amt = Number(log.amount) || 0;
+          switch (log.type) {
+            case "penalty":
+              penaltyTotal += amt;
+              if (log.description) penaltyDescs.push(log.description);
+              break;
+            case "loan":
+              loanTotal += amt;
+              break;
+            case "sales_credit":
+              salesCreditTotal += amt;
+              if (log.description) salesCreditDescs.push(log.description);
+              break;
+            case "iou":
+              iouTotal += amt;
+              break;
           }
-
-          rec.penalty_amount = penaltyTotal;
-          rec.penalty_description = penaltyDescs.join("; ");
-          rec.loan_amount = loanTotal;
-          rec.sales_cred_amount = salesCreditTotal;
-          rec.sales_cred_item = salesCreditDescs.join("; ");
-          rec.iou_amount = iouTotal;
         }
+      }
 
+      if (error && error.code === "PGRST116") {
+        // No record found — use defaults
+        const rec = defaultSalaryRecord(employeeId, month, year, defaultWorkingDays);
+        rec.penalty_amount = penaltyTotal;
+        rec.penalty_description = penaltyDescs.join("; ");
+        rec.loan_amount = loanTotal;
+        rec.sales_cred_amount = salesCreditTotal;
+        rec.sales_cred_item = salesCreditDescs.join("; ");
+        rec.iou_amount = iouTotal;
         setRecord(rec);
       } else if (error) {
         console.error("Error fetching salary record:", error);
         setRecord(defaultSalaryRecord(employeeId, month, year, defaultWorkingDays));
       } else {
+        // Existing record — always override deduction fields with log sums
         setRecord({
           ...data,
           holiday_days_taken: Number(data.holiday_days_taken ?? 0),
@@ -115,10 +115,12 @@ export function useSalaryRecord(
           leave_pay_amount: Number(data.leave_pay_amount),
           bonus_amount: Number(data.bonus_amount),
           absent_days: Number(data.absent_days),
-          loan_amount: Number(data.loan_amount),
-          penalty_amount: Number(data.penalty_amount),
-          sales_cred_amount: Number(data.sales_cred_amount),
-          iou_amount: Number(data.iou_amount),
+          loan_amount: loanTotal,
+          penalty_amount: penaltyTotal,
+          penalty_description: penaltyDescs.length > 0 ? penaltyDescs.join("; ") : data.penalty_description,
+          sales_cred_amount: salesCreditTotal,
+          sales_cred_item: salesCreditDescs.length > 0 ? salesCreditDescs.join("; ") : data.sales_cred_item,
+          iou_amount: iouTotal,
         });
       }
       setLoading(false);
