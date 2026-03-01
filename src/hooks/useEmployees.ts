@@ -9,26 +9,50 @@ export function useEmployees() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchEmployees = async () => {
-    setLoading(true);
-    const { data, error: err } = await supabase
-      .from("employees")
-      .select("*")
-      .eq("is_active", true)
-      .order("sort_order", { ascending: true });
-
-    if (err) {
-      setError(err.message);
-    } else {
-      setEmployees(data || []);
-      setError(null);
-    }
-    setLoading(false);
-  };
-
   useEffect(() => {
+    const fetchEmployees = async () => {
+      try {
+        const { data, error: err } = await supabase
+          .from("employees")
+          .select("*")
+          .eq("is_active", true)
+          .order("sort_order", { ascending: true });
+
+        if (err) {
+          setError(err.message);
+        } else {
+          setEmployees(data || []);
+          setError(null);
+        }
+      } catch (e) {
+        setError(String(e));
+      } finally {
+        setLoading(false);
+      }
+    };
+
     fetchEmployees();
   }, []);
 
-  return { employees, loading, error, refetch: fetchEmployees };
+  const refetch = async () => {
+    setLoading(true);
+    try {
+      const { data, error: err } = await supabase
+        .from("employees")
+        .select("*")
+        .eq("is_active", true)
+        .order("sort_order", { ascending: true });
+
+      if (err) {
+        setError(err.message);
+      } else {
+        setEmployees(data || []);
+        setError(null);
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return { employees, loading, error, refetch };
 }
