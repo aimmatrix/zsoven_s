@@ -42,10 +42,12 @@ const InvoiceTemplate = React.forwardRef<HTMLDivElement, InvoiceTemplateProps>(
         {/* Header */}
         <div className="flex justify-between items-start mb-10 pb-8 border-b border-gray-100">
           <div className="flex items-center gap-5">
-            {/* Logo placeholder */}
-            <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white font-black text-3xl shadow-lg shadow-blue-200">
-              {invoice.business_name ? invoice.business_name.charAt(0).toUpperCase() : 'Z'}
-            </div>
+            {/* Logo */}
+            <img
+              src="/logo.jpeg"
+              alt={invoice.business_name || "Logo"}
+              className="w-20 h-20 rounded-2xl object-cover shadow-lg"
+            />
             <div>
               <h1 className="text-2xl font-black text-gray-900 tracking-tight">{invoice.business_name}</h1>
               <div className="text-sm text-gray-500 mt-1 space-y-0.5">
