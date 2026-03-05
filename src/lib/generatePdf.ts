@@ -4,41 +4,48 @@ import jsPDF from 'jspdf';
 export async function generatePdf(
   element: HTMLElement,
   filename: string = 'invoice'
-): Promise<Blob> {
+): Promise<void> {
   const canvas = await html2canvas(element, {
     scale: 2,
     useCORS: true,
+    allowTaint: true,
     backgroundColor: '#ffffff',
     logging: false,
+    imageTimeout: 15000,
+    windowWidth: 800,
   });
 
-  const imgData = canvas.toDataURL('image/png');
-  const pdfWidth = 210;
-  const pdfHeight = 297;
-  const contentWidth = pdfWidth - 20;
-  const ratio = canvas.width / canvas.height;
-  const contentHeight = contentWidth / ratio;
-
   const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+  const pageWidth = 210;
+  const pageHeight = 297;
+  const margin = 10;
+  const contentWidth = pageWidth - margin * 2;
+  const imgHeightPx = canvas.height;
+  const imgWidthPx = canvas.width;
+  const contentHeightMm = (imgHeightPx / imgWidthPx) * contentWidth;
 
-  if (contentHeight > pdfHeight - 20) {
-    const scaledHeight = pdfHeight - 20;
-    const scaledWidth = scaledHeight * ratio;
-    const xOffset = (pdfWidth - scaledWidth) / 2;
-    pdf.addImage(imgData, 'PNG', xOffset, 10, scaledWidth, scaledHeight);
-  } else {
-    pdf.addImage(imgData, 'PNG', 10, 10, contentWidth, contentHeight);
+  // Multi-page support
+  const singlePageContentHeightPx = (imgWidthPx / contentWidth) * (pageHeight - margin * 2);
+  let offsetY = 0;
+  let isFirstPage = true;
+
+  while (offsetY < imgHeightPx) {
+    if (!isFirstPage) pdf.addPage();
+    isFirstPage = false;
+
+    const pageCanvas = document.createElement('canvas');
+    const sliceHeight = Math.min(singlePageContentHeightPx, imgHeightPx - offsetY);
+    pageCanvas.width = imgWidthPx;
+    pageCanvas.height = sliceHeight;
+    const ctx = pageCanvas.getContext('2d')!;
+    ctx.drawImage(canvas, 0, -offsetY);
+
+    const sliceHeightMm = (sliceHeight / imgWidthPx) * contentWidth;
+    pdf.addImage(pageCanvas.toDataURL('image/png'), 'PNG', margin, margin, contentWidth, sliceHeightMm);
+    offsetY += singlePageContentHeightPx;
   }
 
-  const blob = pdf.output('blob');
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = `${filename}.pdf`;
-  link.click();
-  URL.revokeObjectURL(url);
-
-  return blob;
+  pdf.save(`${filename}.pdf`);
 }
 
 export async function sharePdf(
@@ -48,18 +55,19 @@ export async function sharePdf(
   const canvas = await html2canvas(element, {
     scale: 2,
     useCORS: true,
+    allowTaint: true,
     backgroundColor: '#ffffff',
     logging: false,
+    windowWidth: 800,
   });
 
-  const imgData = canvas.toDataURL('image/png');
-  const pdfWidth = 210;
-  const contentWidth = pdfWidth - 20;
-  const ratio = canvas.width / canvas.height;
-  const contentHeight = contentWidth / ratio;
-
   const pdf = new jsPDF({ unit: 'mm', format: 'a4' });
-  pdf.addImage(imgData, 'PNG', 10, 10, contentWidth, Math.min(contentHeight, 277));
+  const pageWidth = 210;
+  const margin = 10;
+  const contentWidth = pageWidth - margin * 2;
+  const contentHeight = (canvas.height / canvas.width) * contentWidth;
+
+  pdf.addImage(canvas.toDataURL('image/png'), 'PNG', margin, margin, contentWidth, Math.min(contentHeight, 277));
 
   const blob = pdf.output('blob');
   const file = new File([blob], `${filename}.pdf`, { type: 'application/pdf' });
@@ -67,11 +75,7 @@ export async function sharePdf(
   if (navigator.canShare && navigator.canShare({ files: [file] })) {
     await navigator.share({ title: filename, files: [file] });
   } else {
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `${filename}.pdf`;
-    link.click();
-    URL.revokeObjectURL(url);
+    // Fallback: trigger download
+    pdf.save(`${filename}.pdf`);
   }
 }

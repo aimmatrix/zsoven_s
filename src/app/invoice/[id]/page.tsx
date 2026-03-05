@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import { useInvoice } from "@/hooks/useInvoice";
 import InvoiceTemplate from "@/components/InvoiceTemplate";
@@ -11,13 +11,49 @@ export default function InvoicePreviewPage() {
   const invoiceId = params.id as string;
   const { invoice, items, loading } = useInvoice(invoiceId);
   const templateRef = useRef<HTMLDivElement>(null);
+  const scalingRef = useRef<HTMLDivElement>(null);
   const [generating, setGenerating] = useState(false);
+  const [scale, setScale] = useState(1);
+  const [wrapperHeight, setWrapperHeight] = useState<number | null>(null);
+
+  useEffect(() => {
+    const update = () => {
+      const availableWidth = window.innerWidth - 48;
+      const newScale = Math.min(1, availableWidth / 800);
+      setScale(newScale);
+    };
+    update();
+    window.addEventListener("resize", update);
+    return () => window.removeEventListener("resize", update);
+  }, []);
+
+  // Update wrapper height when scale or content changes
+  useEffect(() => {
+    if (!scalingRef.current || !invoice) return;
+    const h = scalingRef.current.scrollHeight;
+    setWrapperHeight(h * scale);
+  }, [scale, invoice, items]);
+
+  const withNoScale = async (fn: () => Promise<void>) => {
+    const el = scalingRef.current;
+    if (el) el.style.transform = "none";
+    try {
+      await fn();
+    } finally {
+      if (el) el.style.transform = `scale(${scale})`;
+    }
+  };
 
   const handleDownload = async () => {
     if (!templateRef.current || !invoice) return;
     setGenerating(true);
     try {
-      await generatePdf(templateRef.current, `Invoice_${invoice.invoice_number}`);
+      await withNoScale(() =>
+        generatePdf(templateRef.current!, `Invoice_${invoice.invoice_number}`)
+      );
+    } catch (err) {
+      console.error("PDF generation failed:", err);
+      alert("Could not generate PDF. Please try printing instead.");
     } finally {
       setGenerating(false);
     }
@@ -27,7 +63,12 @@ export default function InvoicePreviewPage() {
     if (!templateRef.current || !invoice) return;
     setGenerating(true);
     try {
-      await sharePdf(templateRef.current, `Invoice_${invoice.invoice_number}`);
+      await withNoScale(() =>
+        sharePdf(templateRef.current!, `Invoice_${invoice.invoice_number}`)
+      );
+    } catch (err) {
+      console.error("Share failed:", err);
+      alert("Could not share. Please try downloading instead.");
     } finally {
       setGenerating(false);
     }
@@ -84,22 +125,34 @@ export default function InvoicePreviewPage() {
             disabled={generating}
             className="px-4 py-2 bg-green-600 text-white font-bold text-sm rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50"
           >
-            {generating ? 'Processing...' : 'Share'}
+            {generating ? "Processing..." : "Share"}
           </button>
           <button
             onClick={handleDownload}
             disabled={generating}
             className="px-4 py-2 bg-blue-600 text-white font-bold text-sm rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
           >
-            {generating ? 'Processing...' : 'Download PDF'}
+            {generating ? "Processing..." : "Download PDF"}
           </button>
         </div>
       </div>
 
       {/* Invoice Preview */}
       <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8">
-        <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
-          <InvoiceTemplate ref={templateRef} invoice={invoice} items={items} />
+        <div
+          className="bg-white rounded-2xl shadow-lg overflow-hidden"
+          style={{ height: wrapperHeight != null && scale < 1 ? wrapperHeight : undefined }}
+        >
+          <div
+            ref={scalingRef}
+            style={{
+              transform: scale < 1 ? `scale(${scale})` : undefined,
+              transformOrigin: "top left",
+              width: "800px",
+            }}
+          >
+            <InvoiceTemplate ref={templateRef} invoice={invoice} items={items} />
+          </div>
         </div>
       </div>
     </div>
