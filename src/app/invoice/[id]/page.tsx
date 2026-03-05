@@ -11,49 +11,35 @@ export default function InvoicePreviewPage() {
   const invoiceId = params.id as string;
   const { invoice, items, loading } = useInvoice(invoiceId);
   const templateRef = useRef<HTMLDivElement>(null);
-  const scalingRef = useRef<HTMLDivElement>(null);
   const [generating, setGenerating] = useState(false);
   const [scale, setScale] = useState(1);
   const [wrapperHeight, setWrapperHeight] = useState<number | null>(null);
+  const scalingRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const update = () => {
       const availableWidth = window.innerWidth - 48;
-      const newScale = Math.min(1, availableWidth / 800);
-      setScale(newScale);
+      setScale(Math.min(1, availableWidth / 800));
     };
     update();
     window.addEventListener("resize", update);
     return () => window.removeEventListener("resize", update);
   }, []);
 
-  // Update wrapper height when scale or content changes
   useEffect(() => {
     if (!scalingRef.current || !invoice) return;
-    const h = scalingRef.current.scrollHeight;
-    setWrapperHeight(h * scale);
+    setWrapperHeight(scalingRef.current.scrollHeight * scale);
   }, [scale, invoice, items]);
-
-  const withNoScale = async (fn: () => Promise<void>) => {
-    const el = scalingRef.current;
-    if (el) el.style.transform = "none";
-    try {
-      await fn();
-    } finally {
-      if (el) el.style.transform = `scale(${scale})`;
-    }
-  };
 
   const handleDownload = async () => {
     if (!templateRef.current || !invoice) return;
     setGenerating(true);
     try {
-      await withNoScale(() =>
-        generatePdf(templateRef.current!, `Invoice_${invoice.invoice_number}`)
-      );
+      await generatePdf(templateRef.current, `Invoice_${invoice.invoice_number}`);
     } catch (err) {
       console.error("PDF generation failed:", err);
-      alert("Could not generate PDF. Please try printing instead.");
+      // Fallback to browser print
+      window.print();
     } finally {
       setGenerating(false);
     }
@@ -63,19 +49,13 @@ export default function InvoicePreviewPage() {
     if (!templateRef.current || !invoice) return;
     setGenerating(true);
     try {
-      await withNoScale(() =>
-        sharePdf(templateRef.current!, `Invoice_${invoice.invoice_number}`)
-      );
+      await sharePdf(templateRef.current, `Invoice_${invoice.invoice_number}`);
     } catch (err) {
       console.error("Share failed:", err);
       alert("Could not share. Please try downloading instead.");
     } finally {
       setGenerating(false);
     }
-  };
-
-  const handlePrint = () => {
-    window.print();
   };
 
   if (loading) {
@@ -97,64 +77,72 @@ export default function InvoicePreviewPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 pb-12">
-      {/* Action Bar */}
-      <div className="print:hidden bg-white border-b border-gray-200 sticky top-0 z-10">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 py-3 flex flex-wrap items-center gap-3">
-          <a
-            href="/invoice"
-            className="inline-flex items-center text-sm font-medium text-blue-600 hover:text-blue-800 transition-colors mr-auto"
-          >
-            <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
-            Back
-          </a>
-          <a
-            href={`/invoice/create?id=${invoiceId}`}
-            className="px-4 py-2 bg-gray-100 text-gray-700 font-bold text-sm rounded-lg hover:bg-gray-200 transition-colors"
-          >
-            Edit
-          </a>
-          <button
-            onClick={handlePrint}
-            className="px-4 py-2 bg-gray-100 text-gray-700 font-bold text-sm rounded-lg hover:bg-gray-200 transition-colors"
-          >
-            Print
-          </button>
-          <button
-            onClick={handleShare}
-            disabled={generating}
-            className="px-4 py-2 bg-green-600 text-white font-bold text-sm rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50"
-          >
-            {generating ? "Processing..." : "Share"}
-          </button>
-          <button
-            onClick={handleDownload}
-            disabled={generating}
-            className="px-4 py-2 bg-blue-600 text-white font-bold text-sm rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
-          >
-            {generating ? "Processing..." : "Download PDF"}
-          </button>
-        </div>
-      </div>
+    <>
+      {/* Print styles */}
+      <style>{`
+        @media print {
+          body { background: white !important; margin: 0 !important; padding: 0 !important; }
+          .print-hide { display: none !important; }
+          .print-invoice-outer { padding: 0 !important; margin: 0 !important; background: white !important; }
+          .print-invoice-card { box-shadow: none !important; border-radius: 0 !important; border: none !important; overflow: visible !important; height: auto !important; }
+          .print-invoice-scale { transform: none !important; width: 100% !important; }
+        }
+      `}</style>
 
-      {/* Invoice Preview */}
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8">
-        <div
-          className="bg-white rounded-2xl shadow-lg overflow-hidden"
-          style={{ height: wrapperHeight != null && scale < 1 ? wrapperHeight : undefined }}
-        >
+      <div className="min-h-screen bg-gray-100 pb-12 print-invoice-outer">
+        {/* Action Bar */}
+        <div className="print-hide bg-white border-b border-gray-200 sticky top-0 z-10">
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 py-3 flex flex-wrap items-center gap-3">
+            <a
+              href="/invoice"
+              className="inline-flex items-center text-sm font-medium text-blue-600 hover:text-blue-800 transition-colors mr-auto"
+            >
+              <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
+              Back
+            </a>
+            <a
+              href={`/invoice/create?id=${invoiceId}`}
+              className="px-4 py-2 bg-gray-100 text-gray-700 font-bold text-sm rounded-lg hover:bg-gray-200 transition-colors"
+            >
+              Edit
+            </a>
+            <button
+              onClick={handleShare}
+              disabled={generating}
+              className="px-4 py-2 bg-green-600 text-white font-bold text-sm rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50"
+            >
+              {generating ? "Processing..." : "Share"}
+            </button>
+            <button
+              onClick={handleDownload}
+              disabled={generating}
+              className="px-4 py-2 bg-blue-600 text-white font-bold text-sm rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+            >
+              {generating ? "Processing..." : "Download PDF"}
+            </button>
+          </div>
+        </div>
+
+        {/* Invoice Preview */}
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8">
           <div
-            ref={scalingRef}
-            style={{
-              transform: scale < 1 ? `scale(${scale})` : undefined,
-              transformOrigin: "top left",
-              width: "800px",
-            }}
+            className="bg-white rounded-2xl shadow-lg overflow-hidden print-invoice-card"
+            style={{ height: wrapperHeight != null && scale < 1 ? wrapperHeight : undefined }}
           >
-            <InvoiceTemplate ref={templateRef} invoice={invoice} items={items} />
+            <div
+              ref={scalingRef}
+              className="print-invoice-scale"
+              style={{
+                transform: scale < 1 ? `scale(${scale})` : undefined,
+                transformOrigin: "top left",
+                width: "800px",
+              }}
+            >
+              <InvoiceTemplate ref={templateRef} invoice={invoice} items={items} />
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }

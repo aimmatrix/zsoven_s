@@ -6,6 +6,30 @@ import { supabase } from "@/lib/supabase";
 import { Invoice, InvoiceItem, defaultInvoice, defaultInvoiceItem } from "@/lib/types";
 import { generateInvoiceNumber, formatNaira } from "@/lib/invoiceUtils";
 
+interface SavedPayment {
+  id: string;
+  label: string;
+  bank_name: string;
+  account_number: string;
+  account_name: string;
+}
+
+const PAYMENT_STORAGE_KEY = "zsoven_saved_payments";
+
+function loadSavedPayments(): SavedPayment[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = localStorage.getItem(PAYMENT_STORAGE_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveSavedPayments(payments: SavedPayment[]) {
+  localStorage.setItem(PAYMENT_STORAGE_KEY, JSON.stringify(payments));
+}
+
 function InvoiceFormContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -15,6 +39,11 @@ function InvoiceFormContent() {
   const [items, setItems] = useState<InvoiceItem[]>([defaultInvoiceItem(0)]);
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(!!editId);
+  const [savedPayments, setSavedPayments] = useState<SavedPayment[]>([]);
+
+  useEffect(() => {
+    setSavedPayments(loadSavedPayments());
+  }, []);
 
   // Load existing invoice for editing
   useEffect(() => {
@@ -474,6 +503,43 @@ function InvoiceFormContent() {
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 mb-4 relative overflow-hidden">
           <div className="absolute top-0 left-0 w-1 h-full bg-gray-400"></div>
           <h2 className="text-base font-bold text-gray-900 mb-4">Payment Info</h2>
+
+          {/* Saved payment profiles */}
+          {savedPayments.length > 0 && (
+            <div className="mb-4">
+              <label className="block text-xs font-semibold text-gray-500 mb-2">Saved Accounts</label>
+              <div className="flex flex-wrap gap-2">
+                {savedPayments.map((sp) => (
+                  <div key={sp.id} className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        updateInvoice("payment_bank_name", sp.bank_name);
+                        updateInvoice("payment_account_number", sp.account_number);
+                        updateInvoice("payment_account_name", sp.account_name);
+                      }}
+                      className="px-3 py-1.5 bg-blue-50 text-blue-700 text-xs font-bold rounded-lg hover:bg-blue-100 transition-colors"
+                    >
+                      {sp.label}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (!confirm(`Remove "${sp.label}"?`)) return;
+                        const updated = savedPayments.filter((p) => p.id !== sp.id);
+                        setSavedPayments(updated);
+                        saveSavedPayments(updated);
+                      }}
+                      className="w-6 h-6 flex items-center justify-center text-gray-400 hover:text-red-500 transition-colors"
+                    >
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           <div className="space-y-3">
             <div>
               <label className={labelClass}>Bank Name</label>
@@ -487,6 +553,37 @@ function InvoiceFormContent() {
               <label className={labelClass}>Account Name</label>
               <input className={inputClass} value={invoice.payment_account_name} onChange={(e) => updateInvoice("payment_account_name", e.target.value)} placeholder="e.g. Z's Oven" />
             </div>
+
+            {/* Save current payment info */}
+            {invoice.payment_bank_name.trim() && invoice.payment_account_number.trim() && (
+              <button
+                type="button"
+                onClick={() => {
+                  const label = `${invoice.payment_bank_name} - ${invoice.payment_account_name || invoice.payment_account_number}`;
+                  const exists = savedPayments.some(
+                    (sp) => sp.bank_name === invoice.payment_bank_name && sp.account_number === invoice.payment_account_number
+                  );
+                  if (exists) {
+                    alert("This account is already saved.");
+                    return;
+                  }
+                  const newPayment: SavedPayment = {
+                    id: Date.now().toString(),
+                    label,
+                    bank_name: invoice.payment_bank_name,
+                    account_number: invoice.payment_account_number,
+                    account_name: invoice.payment_account_name,
+                  };
+                  const updated = [...savedPayments, newPayment];
+                  setSavedPayments(updated);
+                  saveSavedPayments(updated);
+                }}
+                className="w-full py-2 border-2 border-dashed border-gray-300 rounded-xl text-xs font-bold text-gray-500 hover:border-green-400 hover:text-green-600 transition-colors flex items-center justify-center gap-1"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                Save this payment info for future use
+              </button>
+            )}
           </div>
         </div>
 
