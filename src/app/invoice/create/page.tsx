@@ -170,36 +170,42 @@ function InvoiceFormContent() {
       let invoiceId = editId;
 
       if (editId) {
-        await supabase.from("invoices").update(invoiceData).eq("id", editId);
-        await supabase.from("invoice_items").delete().eq("invoice_id", editId);
+        const { error: updateError } = await supabase.from("invoices").update(invoiceData).eq("id", editId);
+        if (updateError) throw new Error(`Update failed: ${updateError.message}`);
+        const { error: deleteError } = await supabase.from("invoice_items").delete().eq("invoice_id", editId);
+        if (deleteError) throw new Error(`Delete items failed: ${deleteError.message}`);
       } else {
-        const { data } = await supabase.from("invoices").insert(invoiceData).select("id").single();
+        const { data, error: insertError } = await supabase.from("invoices").insert(invoiceData).select("id").single();
+        if (insertError) throw new Error(`Insert failed: ${insertError.message}`);
         invoiceId = data?.id;
       }
 
-      if (invoiceId) {
-        const itemsData = items
-          .filter((item) => item.item_name.trim())
-          .map((item, i) => ({
-            invoice_id: invoiceId,
-            sort_order: i,
-            day_label: item.day_label,
-            item_name: item.item_name,
-            description: item.description,
-            qty: item.qty,
-            unit_cost: item.unit_cost,
-            total: item.qty * item.unit_cost,
-          }));
-
-        if (itemsData.length > 0) {
-          await supabase.from("invoice_items").insert(itemsData);
-        }
-
-        router.push(`/invoice/${invoiceId}`);
+      if (!invoiceId) {
+        throw new Error("No invoice ID returned after save.");
       }
+
+      const itemsData = items
+        .filter((item) => item.item_name.trim())
+        .map((item, i) => ({
+          invoice_id: invoiceId,
+          sort_order: i,
+          day_label: item.day_label,
+          item_name: item.item_name,
+          description: item.description,
+          qty: item.qty,
+          unit_cost: item.unit_cost,
+          total: item.qty * item.unit_cost,
+        }));
+
+      if (itemsData.length > 0) {
+        const { error: itemsError } = await supabase.from("invoice_items").insert(itemsData);
+        if (itemsError) throw new Error(`Insert items failed: ${itemsError.message}`);
+      }
+
+      router.push(`/invoice/${invoiceId}`);
     } catch (err) {
       console.error("Save error:", err);
-      alert("Failed to save invoice. Please try again.");
+      alert(err instanceof Error ? err.message : "Failed to save invoice. Please try again.");
     } finally {
       setSaving(false);
     }
