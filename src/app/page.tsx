@@ -112,6 +112,13 @@ export default function Home() {
               <svg className="w-6 h-6 text-gray-400 group-hover:text-blue-500 mb-2 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
               <span className="text-sm font-semibold text-gray-700 group-hover:text-blue-600 transition-colors">Manage Staff</span>
             </a>
+            <a
+              href="/invoice"
+              className="flex-1 flex flex-col items-center justify-center p-3 bg-white border border-gray-200 rounded-xl hover:border-green-300 hover:shadow-sm transition-all group"
+            >
+              <svg className="w-6 h-6 text-gray-400 group-hover:text-green-500 mb-2 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+              <span className="text-sm font-semibold text-gray-700 group-hover:text-green-600 transition-colors">Invoices</span>
+            </a>
           </div>
         </div>
 

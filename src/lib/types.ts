@@ -50,6 +50,89 @@ export interface CalculatedSalary {
   net_pay: number;
 }
 
+// ===== Invoice Types =====
+
+export interface Invoice {
+  id?: string;
+  invoice_number: string;
+  type: 'single' | 'multi_day';
+  business_name: string;
+  business_address: string;
+  business_phone: string;
+  business_email: string;
+  bill_to_name: string;
+  bill_to_address: string;
+  bill_to_phone: string;
+  po_number: string;
+  invoice_date: string;
+  due_date: string;
+  subtotal: number;
+  tax_percent: number;
+  tax_amount: number;
+  total: number;
+  amount_paid: number;
+  balance_due: number;
+  payment_bank_name: string;
+  payment_account_number: string;
+  payment_account_name: string;
+  notes: string;
+  signature_name: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface InvoiceItem {
+  id?: string;
+  invoice_id?: string;
+  sort_order: number;
+  day_label: string | null;
+  item_name: string;
+  description: string;
+  qty: number;
+  unit_cost: number;
+  total: number;
+}
+
+export function defaultInvoice(): Invoice {
+  return {
+    invoice_number: '',
+    type: 'single',
+    business_name: "Z's Oven",
+    business_address: '7 b rimi drive unguwar rimi',
+    business_phone: '07037050919',
+    business_email: 'zsoven22@gmail.com',
+    bill_to_name: '',
+    bill_to_address: '',
+    bill_to_phone: '',
+    po_number: '',
+    invoice_date: new Date().toISOString().split('T')[0],
+    due_date: '',
+    subtotal: 0,
+    tax_percent: 0,
+    tax_amount: 0,
+    total: 0,
+    amount_paid: 0,
+    balance_due: 0,
+    payment_bank_name: '',
+    payment_account_number: '',
+    payment_account_name: '',
+    notes: 'Thank you for the patronage',
+    signature_name: "Z's Oven",
+  };
+}
+
+export function defaultInvoiceItem(sortOrder: number, dayLabel: string | null = null): InvoiceItem {
+  return {
+    sort_order: sortOrder,
+    day_label: dayLabel,
+    item_name: '',
+    description: '',
+    qty: 1,
+    unit_cost: 0,
+    total: 0,
+  };
+}
+
 export function defaultSalaryRecord(
   employeeId: string,
   month: number,
